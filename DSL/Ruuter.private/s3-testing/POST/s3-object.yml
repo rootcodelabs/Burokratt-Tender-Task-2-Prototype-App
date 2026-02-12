@@ -1,0 +1,46 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Delete S3 object"
+  method: delete
+  accepts: json
+  returns: json
+  namespace: s3-testing
+  allowlist:
+    body:
+      - field: objectName
+        type: string
+        description: "Object name to delete"
+      - field: bucketName
+        type: string
+        description: "Bucket name (optional)"
+
+extractRequestData:
+  assign:
+    objectName: ${incoming.body.objectName}
+  next: callS3Ferry
+
+callS3Ferry:
+  call: http.delete
+  args:
+    url: "[#S3_TESTING_S3_FERRY]/s3/delete"
+    headers:
+      Content-Type: "application/json"
+    body:
+      objectName: ${objectName}
+  result: s3_ferry_result
+  next: checkStatusCode
+
+checkStatusCode:
+  switch:
+    - condition: ${s3_ferry_result.response.statusCode == 200}
+      next: returnSuccess
+  default: returnError
+
+returnSuccess:
+  return: ${s3_ferry_result.response.body}
+  next: end
+
+returnError:
+  return: "error"
+  next: end

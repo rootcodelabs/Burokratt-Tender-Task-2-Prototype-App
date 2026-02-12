@@ -1,0 +1,65 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Initiate multipart file upload to S3-Ferry"
+  method: post
+  accepts: json
+  returns: json
+  namespace: s3-testing
+  allowlist:
+    body:
+      - field: fileName
+        type: string
+        description: "Original file name"
+      - field: fileSize
+        type: number
+        description: "Total file size in bytes"
+      - field: mimeType
+        type: string
+        description: "MIME type of the file"
+      - field: storageType
+        type: string
+        description: "Storage type (S3 or Azure)"
+
+extractRequestData:
+  assign:
+    fileName: ${incoming.body.fileName}
+    fileSize: ${incoming.body.fileSize}
+    mimeType: ${incoming.body.mimeType}
+    storageType: ${incoming.body.storageType}
+  next: callS3Ferry
+
+callS3Ferry:
+  call: http.post
+  args:
+    url: "[#S3_TESTING_S3_FERRY]/upload/initiate"
+    headers:
+      Content-Type: "application/json"
+    body:
+      fileName: ${fileName}
+      fileSize: ${fileSize}
+      mimeType: ${mimeType}
+      storageType: ${storageType}
+  result: s3_ferry_result
+  next: storeUploadData
+
+storeUploadData:
+  call: http.post
+  args:
+    url: "[#S3_TESTING_RESQL]/store-upload-data"
+    body:
+      uploadId: ${s3_ferry_result.response.body.uploadId}
+      objectName: ${s3_ferry_result.response.body.objectName}
+      fileName: ${fileName}
+      fileSize: ${fileSize}
+      mimeType: ${mimeType}
+      storageType: ${storageType}
+      status: "initiated"
+      totalChunks: ${s3_ferry_result.response.body.totalChunks}
+      initiatedAt: ${s3_ferry_result.response.body.initiatedAt}
+  result: db_result
+  next: returnResponse
+
+returnResponse:
+  return: ${s3_ferry_result.response.body}
+  next: end

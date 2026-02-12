@@ -1,0 +1,35 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get upload status from S3-Ferry"
+  method: get
+  accepts: json
+  returns: json
+  namespace: s3-testing
+  allowlist:
+    query:
+      - field: uploadId
+        type: string
+        description: "Upload ID"
+      - field: objectName
+        type: string
+        description: "Object name in S3"
+
+extractRequestData:
+  assign:
+    uploadId: ${incoming.query.uploadId}
+    objectName: ${incoming.query.objectName}
+  next: callS3Ferry
+
+callS3Ferry:
+  call: http.get
+  args:
+    url: "[#S3_TESTING_S3_FERRY]/upload/status?uploadId=${uploadId}&objectName=${objectName}"
+    headers:
+      Content-Type: "application/json"
+  result: s3_ferry_result
+  next: returnResponse
+
+returnResponse:
+  return: ${s3_ferry_result.response.body}
+  next: end

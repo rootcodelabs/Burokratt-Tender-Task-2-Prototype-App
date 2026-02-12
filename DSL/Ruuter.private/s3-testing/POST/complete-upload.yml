@@ -1,0 +1,55 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Complete multipart upload"
+  method: post
+  accepts: json
+  returns: json
+  namespace: s3-testing
+  allowlist:
+    body:
+      - field: uploadId
+        type: string
+        description: "Upload ID"
+      - field: objectName
+        type: string
+        description: "Object name"
+      - field: parts
+        type: array
+        description: "Array of uploaded parts"
+
+extractRequestData:
+  assign:
+    uploadId: ${incoming.body.uploadId}
+    objectName: ${incoming.body.objectName}
+    parts: ${incoming.body.parts}
+  next: callS3Ferry
+
+callS3Ferry:
+  call: http.post
+  args:
+    url: "[#S3_TESTING_S3_FERRY]/upload/complete"
+    headers:
+      Content-Type: "application/json"
+    body:
+      uploadId: ${uploadId}
+      objectName: ${objectName}
+      parts: ${parts}
+  result: s3_ferry_result
+  next: updateUploadStatus
+
+updateUploadStatus:
+  call: http.post
+  args:
+    url: "[#S3_TESTING_RESQL]/update-upload-status"
+    body:
+      uploadId: ${uploadId}
+      objectName: ${objectName}
+      status: "completed"
+      completedAt: ${s3_ferry_result.response.body.completedAt}
+  result: db_result
+  next: returnResponse
+
+returnResponse:
+  return: ${s3_ferry_result.response.body}
+  next: end

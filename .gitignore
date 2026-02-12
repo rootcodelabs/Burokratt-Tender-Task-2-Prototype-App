@@ -1,0 +1,10 @@
+/S3-Ferry
+/db-data
+/minio-data
+/nats-data
+/tim-db
+/prometheus-data
+/grafana-data
+/shared
+logs
+*.log

@@ -1,0 +1,33 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get presigned download URL for S3 object"
+  method: post
+  accepts: json
+  returns: json
+  namespace: s3-testing
+  allowlist:
+    body:
+      - field: objectName
+        type: string
+        description: "Object name to download"
+
+extractRequestData:
+  assign:
+    objectName: ${incoming.body.objectName}
+  next: callS3Ferry
+
+callS3Ferry:
+  call: http.get
+  args:
+    url: "[#S3_TESTING_S3_FERRY]/files/download-url"
+    headers:
+      Content-Type: "application/json"
+    query:
+      objectName: ${objectName}
+  result: s3_ferry_result
+  next: returnResponse
+
+returnResponse:
+  return: ${s3_ferry_result.response.body}
+  next: end

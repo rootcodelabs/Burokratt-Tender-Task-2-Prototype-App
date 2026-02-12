@@ -1,0 +1,53 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Resume an incomplete multipart upload"
+  method: post
+  accepts: json
+  returns: json
+  namespace: s3-testing
+  allowlist:
+    body:
+      - field: uploadId
+        type: string
+        description: "Upload ID"
+      - field: objectName
+        type: string
+        description: "Object name"
+      - field: fileName
+        type: string
+        description: "Original file name"
+      - field: fileSize
+        type: number
+        description: "File size"
+      - field: mimeType
+        type: string
+        description: "MIME type"
+
+extractRequestData:
+  assign:
+    uploadId: ${incoming.body.uploadId}
+    objectName: ${incoming.body.objectName}
+    fileName: ${incoming.body.fileName}
+    fileSize: ${incoming.body.fileSize}
+    mimeType: ${incoming.body.mimeType}
+  next: callS3Ferry
+
+callS3Ferry:
+  call: http.post
+  args:
+    url: "[#S3_TESTING_S3_FERRY]/upload/resume"
+    headers:
+      Content-Type: "application/json"
+    body:
+      uploadId: ${uploadId}
+      objectName: ${objectName}
+      fileName: ${fileName}
+      fileSize: ${fileSize}
+      mimeType: ${mimeType}
+  result: s3_ferry_result
+  next: returnResponse
+
+returnResponse:
+  return: ${s3_ferry_result.response.body}
+  next: end
