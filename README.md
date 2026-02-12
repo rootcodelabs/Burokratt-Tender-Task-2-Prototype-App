@@ -24,7 +24,6 @@
 ### 1. UI → Ruuter-Private
 - **Endpoint**: `http://localhost:8088/s3-testing`
 - **Purpose**: Entry point for all API calls from the UI
-- **Cookie handling**: Cookies are sent with every request using `credentials: 'include'`
 
 ### 2. Ruuter-Private → S3-Ferry
 - **Endpoint**: `http://s3-ferry:3000/v1/upload/*`
@@ -41,7 +40,6 @@
 ### UI (.env.local)
 ```env
 NEXT_PUBLIC_RUUTER_PRIVATE_URL=http://localhost:8088/s3-testing
-NEXT_PUBLIC_S3_FERRY_URL=http://localhost:3000
 ```
 
 ### Docker Network (docker-compose.yml)
@@ -49,7 +47,6 @@ NEXT_PUBLIC_S3_FERRY_URL=http://localhost:3000
 GUI:
   environment:
     - NEXT_PUBLIC_RUUTER_PRIVATE_URL=http://ruuter-private:8088/s3-testing
-    - NEXT_PUBLIC_S3_FERRY_URL=http://s3-ferry:3000
 ```
 
 ## API Endpoints
@@ -81,10 +78,12 @@ GUI:
 
 ## File Structure
 
-
+```
 Upgraded S3/
 ├── docker-compose.yml           # Main orchestration file
-├── migrate-s3-tables.ps1        # Database migration script
+├── migrate-s3-tables.sh         # Liquibase migration script
+├── constants.ini                # Configuration constants
+├── README.md                    # This file
 ├── DSL/
 │   ├── Ruuter.private/
 │   │   └── s3-testing/
@@ -105,13 +104,20 @@ Upgraded S3/
 │   │           ├── store-upload-data.sql
 │   │           └── update-upload-status.sql
 │   └── Liquibase/
-│       └── create-uploads-table.sql
-├── ui/
+│       ├── master.yml           # Liquibase changelog master file
+│       ├── liquibase.properties # Liquibase configuration
+│       └── changelog/
+│           └── create-uploads-table.sql
+├── GUI/
+│   ├── app/                     # Next.js app directory
 │   ├── lib/
-│   │   └── s3-ferry-client.ts   # Updated to use Ruuter
+│   │   └── s3-ferry-client.ts   # S3-Ferry API client
+│   ├── public/                  # Static assets
 │   ├── .env.local               # Local environment config
 │   ├── .env.development         # Development environment config
-│   ├── next.config.ts           # Next.js CORS & cookie config
-│   └── Dockerfile               # UI container image
+│   ├── next.config.ts           # Next.js configuration
+│   ├── Dockerfile               # UI container image
+│   └── Dockerfile.dev           # Development container image
 └── S3-Ferry/                    # S3-Ferry microservice
+```
 
